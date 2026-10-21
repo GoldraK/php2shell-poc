@@ -1,15 +1,16 @@
 services:
-  # PHP-FPM + nginx (for Chain A/B/C testing)
-  php-fpm:
+  php:
     image: php:8.2-fpm
-    container_name: php2shell-fpm
+    container_name: php2shell-lab
     ports: ["9000:9000"]
     volumes:
       - ./webroot:/var/www/html
       - ./php.ini:/usr/local/etc/php/php.ini
+      - ./php-fpm-pool.conf:/usr/local/etc/php-fpm.d/zz-single-worker.conf
     security_opt: [seccomp:unconfined]
     privileged: true
-    command: bash -c "mkdir -p /tmp/sessions && chmod 1777 /tmp/sessions && php-fpm"
+    command: >
+      bash -c "mkdir -p /tmp/sessions && chmod 1777 /tmp/sessions && php-fpm"
 
   nginx:
     image: nginx:alpine
@@ -18,13 +19,4 @@ services:
     volumes:
       - ./webroot:/var/www/html
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on: [php-fpm]
-
-  # Apache mod_php (for Chain D — OOM testing)
-  apache:
-    image: php:8.2-apache
-    container_name: php2shell-apache
-    ports: ["18081:80"]
-    volumes:
-      - ./webroot:/var/www/html
-      - ./php-apache.ini:/usr/local/etc/php/php.ini
+    depends_on: [php]
