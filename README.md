@@ -220,6 +220,39 @@ docker exec php2shell-lab sh -c 'ls -la /tmp/sessions/ && cat /tmp/sessions/sess
 You will see the PHP payload stored raw inside `s:4:"name";s:32:"<?php ...";`,
 which is the whole point of Chain A.
 
+## Detection Rules
+
+Drop-in rules for the three chains are in [`detection/`](detection/), adapted
+from the upstream project:
+
+| File | Format | What it covers |
+|------|--------|----------------|
+| `php2shell.rules` | Suricata / Snort | 12 network rules: request-side, response-side and recon |
+| `php2shell.yaml` | Sigma | 5 SIEM rules: web logs, process creation, file events |
+| `modsecurity.conf` | ModSecurity v2/v3 | WAF rules, drop-in for Apache or nginx |
+| `php2shell.lua` | OpenResty Lua | Lightweight reverse-proxy filter |
+
+The rules that matter for the chains in this repo:
+
+- `PHP_SESSION_UPLOAD_PROGRESS` in a multipart POST body (Chains A, C, E)
+- `PHPSESSID` sent as a form field instead of a cookie (session fixation)
+- `<?php` inside a `filename=` parameter (Chain A injection)
+- `|O:` or `|a:` inside a filename (serialized-object smuggling)
+- `Failed to decode session object` / `Session object destruction failed`
+  in the response (Chains C and E firing)
+
+**Fastest mitigation:** block `PHP_SESSION_UPLOAD_PROGRESS` in multipart POST
+bodies. It has near-zero legitimate use and covers the primary vector for all
+three chains.
+
+```bash
+# Suricata
+cp detection/php2shell.rules /etc/suricata/rules/
+
+# ModSecurity
+cp detection/modsecurity.conf /etc/modsecurity/conf.d/php2shell.conf
+```
+
 ## How the lab is wired
 
 | Path | Purpose |
@@ -234,6 +267,15 @@ which is the whole point of Chain A.
 | `lab/webroot/api/gadget.php` | `Evil::__destruct()` stand-in (Chain C) |
 | `lab/webroot/e_shell.php` | startup gadget + output page (Chain E) |
 | `lab/webroot/api/gadget_e.php` | `EvilE::__destruct()` stand-in (Chain E) |
+| `detection/php2shell.rules` | Suricata / Snort network rules |
+| `detection/php2shell.yaml` | Sigma SIEM rules |
+| `detection/modsecurity.conf` | ModSecurity WAF rules |
+| `detection/php2shell.lua` | OpenResty Lua filter |
+| `poc/exploit_chain_a.py` | Chain A exploit, interactive shell |
+| `poc/exploit_chain_c.py` | Chain C exploit, interactive shell |
+| `poc/exploit_chain_e.py` | Chain E exploit, interactive shell |
+| `poc/chain_common.py` | shared HTTP client and shell loop |
+| `poc/run_all.sh` | runs every chain, one verdict per line |
 
 ## Mitigation
 
