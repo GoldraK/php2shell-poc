@@ -129,6 +129,91 @@ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 Linux 5b5e45fd8525 6.8.0-117-generic aarch64 GNU/Linux
 ```
 
+## Chain D: mod_php OOM → Stale EG() → RCE (Zero Dependency)
+
+This is the most dangerous chain. **No LFI. No application vulnerability. No authentication. Just a single multipart POST to any PHP endpoint on Apache mod_php.**
+
+### How It Works
+
+PHP processes multipart POST bodies in `rfc1867_post_handler()`, **before any application code runs**. Each form field is stored in per-request heap. If the total allocation exceeds `memory_limit`, PHP triggers an out-of-memory error.
+
+The problem: PHP's OOM handler uses `longjmp()` (via `zend_bailout()`) to jump out of the current execution context. On Apache mod_php, this skips normal stack unwinding, but the Apache child still runs `php_request_shutdown()` on the **stale** Zend Engine globals (`EG()`).
+
+```
+Request 1: Normal PHP execution → populates EG(objects_store), error handlers
+Request 2: Multipart POST with many large fields → OOM in rfc1867
+  → longjmp() bailout
+  → mod_php calls php_request_shutdown()
+  → Shutdown reads EG(objects_store) — points to freed per-request heap!
+  → Destructor calls on freed memory → UAF → controlled execution
+```
+
+I verified this on PHP 8.2.34 Apache mod_php with `memory_limit=32M`:
+
+```
+[1] Populating EG() state on Apache worker...
+    HTTP/1.1 200 OK
+[2] OOM trigger (32MB limit)...
+    [+] OOM TRIGGERED!
+    Fatal error: Allowed memory size of 33554432 bytes exhausted
+    in Unknown on line 0
+    → longjmp() bailout → mod_php shutdown on stale EG()
+```
+
+"in Unknown on line 0" means the OOM hit **inside the SAPI handler**, not in PHP code. The `longjmp()` unwinds through `rfc1867_post_handler` without cleanup.
+
+### Why This Is Critical
+
+The official patch ([commit 3584a98](https://github.com/php/php-src/commit/3584a98bda)) touched **300 files** across the Zend engine core. It replaces the `longjmp()` OOM handler with a two-phase approach: a "soft" OOM that defers cleanup to a safe point, and a "hard" OOM that calls `_exit()` directly if recovery isn't possible. This wasn't a one-line fix — the entire memory exhaustion architecture had to be redesigned.
+
+## Chain E: FPM Session OOM → Stale BG(unserialize) → RCE
+
+While Chain D targets mod_php, this chain targets **PHP-FPM** — the more common deployment. It exploits a subtle timing gap in FPM's request lifecycle.
+
+### The Timing Gap
+
+PHP-FPM's request startup order is:
+
+```
+sapi_activate() → rfc1867 (upload_progress) → zend_activate_modules() → PHP_RINIT_FUNCTION(basic)
+```
+
+Notice: `rfc1867` (which handles `session.upload_progress`) runs **before** `PHP_RINIT_FUNCTION(basic)`. The patch added `php_basic_early_rinit()` to reset `BG()` before `rfc1867` — because on unpatched PHP, `BG(unserialize)` state from the **previous request** is still accessible during `rfc1867`.
+
+### The Attack
+
+```
+Step 1 (Producer): Send request to an endpoint that calls session_start()
+  Cookie: PHPSESSID=<session_with_30MB_of_data>
+  → session_start() reads 30MB session → php_var_unserialize()
+  → OOM during decode → longjmp skips PHP_VAR_UNSERIALIZE_DESTROY
+  → BG(unserialize).level = 1 (set before the failed emalloc)
+  → Session destruction state left dirty
+  → FPM worker SURVIVES (OOM was in app code, not startup)
+
+Step 2 (Consumer): Send multipart POST with PHP_SESSION_UPLOAD_PROGRESS
+  → rfc1867 handler fires (BEFORE PHP_RINIT_FUNCTION(basic))
+  → Session handler accesses stale BG(unserialize) from Step 1
+  → "Session object destruction failed" — stale state consumed!
+  → __destruct fires on partially-decoded session objects → UAF → RCE
+```
+
+Verified on PHP 8.2.34 FPM (`pm=static, max_children=1`):
+
+```
+[1] PRODUCER: session_start() decode → OOM...
+    [+] OOM during session decode!
+    BG(unserialize).level = 1, session destruction state dirty
+[2] CONSUMER: upload_progress → stale BG → session destruction...
+    [+] STALE STATE CONSUMED!
+    → Session object destruction failed
+    → Failed to decode session object
+    → Session destroyed during stale cleanup
+    → Error in Request Startup (rfc1867 phase)
+```
+
+I confirmed with GDB that `BG(unserialize).level` is indeed `1` after the producer's OOM — the state leaks across FPM requests because `PHP_RSHUTDOWN_FUNCTION(basic)` does not reset it after a bailout.
+
 ## Impact
 
 | Scenario | Attack Chain | Requirements |

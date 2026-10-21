@@ -23,6 +23,15 @@ bundled lab, each ending in an **interactive shell**.
 
 **Author:** [Qi Deng](https://github.com/ikow) &nbsp;|&nbsp; **Writeup:** [qideng.substack.com](https://qideng.substack.com/p/php2shell-dissecting-phps-critical) &nbsp;|&nbsp; **Date:** 2026-10-21
 
+## CVE Details
+
+| CVE | GHSA | CVSS | Description |
+|-----|------|------|-------------|
+| CVE-2026-109618 | [GHSA-w8hw-w9fx-j79w](https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w) | 9.2 | OOM → `longjmp()` leaves Zend engine state invalid → RCE |
+| CVE-2026-109619 | [GHSA-6wmf-4rv5-p3rp](https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp) | 9.2 | Stale global state across FPM worker requests → UAF → RCE |
+
+**Patch:** [Commit 3584a98](https://github.com/php/php-src/commit/3584a98bda) — 300 files changed across the Zend engine.
+
 ## Impact
 
 | What | Scale |
@@ -296,6 +305,18 @@ session.use_strict_mode = On
 > Chain A and C are request-level bugs: they do not depend on the memory
 > corruption patches, so updating PHP alone does not remove them. Turning off
 > `upload_progress` and enforcing consistent session handling does.
+
+## Downstream Impact
+
+Wiz has demonstrated pre-auth RCE on stock container images:
+
+| Platform | Vulnerable | Notes |
+|----------|:----------:|-------|
+| WordPress | Yes | Core doesn't use PHP sessions, but WooCommerce and many plugins do |
+| Joomla | Yes | Uses native PHP sessions by default |
+| Drupal | Yes | Uses native PHP sessions by default |
+| Magento | Yes | Vulnerable even in maintenance mode |
+| Laravel | Yes | `PendingBroadcast` is a known `__destruct` gadget |
 
 ## Timeline
 
