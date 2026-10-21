@@ -1,4 +1,4 @@
-# php2shell — Full Technical Analysis
+# php2shell — Technical Analysis
 
 ## CVE-2026-109618 / CVE-2026-109619
 **Author:** Qi Deng  **Date:** 2026-10-21
@@ -7,16 +7,20 @@
 
 ## 1. Vulnerability Summary
 
-Two critical vulnerabilities in PHP's `session.upload_progress` handler enable pre-authentication remote code execution on PHP 5.4.0 through 8.5.x.
+Weaknesses in PHP's `session.upload_progress` handler and session deserialisation
+that enable pre-authentication remote code execution on PHP 5.4.0 through 8.5.x.
 
 | Bug | Root Cause | Impact |
 |-----|-----------|--------|
 | Session Fixation | `MULTIPART_EVENT_FORMDATA` accepts PHPSESSID from POST body ignoring `use_only_cookies` | Attacker controls session ID and file path |
 | Filename Injection | `add_assoc_string_ex(*data->filename)` stores raw filename in session without validation | PHP code / serialized objects injected into session files |
 | Serializer Leak | `PS(serializer)` not reset in `php_rshutdown_session_globals()` | Cross-request handler mismatch in FPM |
-| var_destroy UAF | `i_zval_ptr_dtor` at line 310 fires `__destruct` without `BG(serialize_lock)` | Heap-use-after-free → arbitrary code execution |
+| `__destruct` on decode failure | `PHP_VAR_UNSERIALIZE_DESTROY` runs destructors even when the decode returns FAILURE, without `BG(serialize_lock)` | Object injection → arbitrary code execution |
 
 ## 2. Attack Chains
+
+Only chains that reach a complete RCE are documented here. Each one is
+reproducible in the bundled lab and returns an interactive shell.
 
 ### Chain A: Session Injection + LFI → RCE
 
@@ -24,55 +28,71 @@ Two critical vulnerabilities in PHP's `session.upload_progress` handler enable p
 Conditions: upload_progress.enabled=On (default) + application has LFI
 Complexity: Low | Reliability: 100%
 
-1. POST multipart with PHP code in filename
-2. rfc1867 handler stores filename as-is in session file  
+1. POST multipart with PHP code in the filename
+2. The rfc1867 handler stores the filename as-is in the session file
 3. include(session_file) → execute injected PHP → RCE
 ```
 
-**Verified:** `exploit_session_inject.py` → `uid=33(www-data)` on PHP 8.2.34.
-
-### Chain B: var_destroy UAF → RCE
-
-```
-Conditions: ability to call unserialize() with controlled data
-Complexity: Medium | Reliability: ~60% (heap-dependent)
-
-1. unserialize() payload with 2000+ entries → overflow VAR_ENTRIES_MAX (1018)
-2. Duplicate key moves object to dtor list
-3. var_destroy Phase 1: efree extension chunks
-4. Phase 2: i_zval_ptr_dtor → __destruct (BG(serialize_lock)==0)
-5. Inner unserialize('R:1500;') reuses outer var_hash → reads freed memory
-6. Spray reclaims freed chunk → controlled pointer → handler overwrite → RCE
-```
-
-**Verified:** ASAN heap-use-after-free at `var_unserializer.c:851`. RCE via `var_dump` handler overwrite on x86-64.
+Verified in the lab: `uid=33(www-data)` on PHP 8.2.35, plus an interactive
+shell. If `session.upload_progress.cleanup=On` (the PHP default), the file is
+unlinked when the upload request finishes, so the include has to race the
+cleanup — `exploit_chain_a.py --race` does exactly that.
 
 ### Chain C: Handler Mismatch → `__destruct` → RCE
 
 ```
-Conditions: target has directories with different session.serialize_handler
+Conditions: two directories with different session.serialize_handler
 Complexity: Medium | Reliability: High
 
-1. Upload to Dir A (php_serialize) — filename contains |O:CLASS:N:{PAYLOAD}
-2. Upload to Dir B (php handler) with same SID
-3. rfc1867 reads php_serialize session with php decoder
-4. php decoder finds | in filename → splits → deserializes injected object
-5. Trailing data → decode FAILURE
-6. __destruct fires during PHP_VAR_UNSERIALIZE_DESTROY cleanup
-7. POP gadget chain → RCE
+1. /app (php_serialize) stores  zz|O:CLASS:N:{PAYLOAD}  in a session variable
+2. /api (php handler) reads the same SID
+3. The php decoder scans for | → deserializes the object
+4. Trailing session data makes the decode FAILURE
+5. __destruct fires during PHP_VAR_UNSERIALIZE_DESTROY anyway
+6. The gadget runs → RCE
 ```
 
-**Key insight:** `__destruct` fires on BOTH success and failure paths of `var_destroy`. The decode FAILURE does NOT prevent exploitation.
+**Key insight:** the decode FAILURE does not prevent exploitation, because the
+destructor list is walked during cleanup regardless of the return value.
 
-**Verified:** `Evil::__destruct(cmd="id")` → `uid=33(www-data)` via pure rfc1867 handler.
+Two constraints found during verification:
 
-## 3. Root Cause Analysis
+- The pipe must be inside a session *value*. A multipart filename is stored
+  inside a length-prefixed `php_serialize` value, where the `php` decoder never
+  looks for `|`, so it cannot be used as the injection point for this chain.
+- The byte lengths in the serialized object must be exact. `s:5:"id;"`
+  prevents instantiation; the exploit computes real lengths from the payload.
+
+### Chain E: Session Decode Failure → `__destruct` → RCE
+
+```
+Conditions: session_start() endpoint + a session file you can plant
+Complexity: Low | Reliability: High
+
+1. Session file contains  x|<serialized object><trailing junk>
+2. session_start() deserializes the object, then fails on the trailing data
+3. PHP_VAR_UNSERIALIZE_DESTROY runs __destruct() during request startup
+4. The gadget runs before the script body executes
+```
+
+The output problem: at startup the response body does not exist, so anything
+the destructor `echo`es is discarded. The lab gadget writes to a temp file and
+the page serves it after `session_start()` returns, which is what makes the
+interactive shell possible.
+
+An OOM variant was also reproduced (a 30 MB session file against
+`memory_limit=32M` produces `Fatal error: Allowed memory size exhausted` inside
+`session_start()` and the worker survives), but the bailout aborts before the
+destructor runs, so it does not yield code execution. The decode-failure path
+above is the one that works.
+
+## 3. Root Cause Detail
 
 ### 3.1 Session Fixation (ext/session/session.c)
 
 ```c
 // MULTIPART_EVENT_FORMDATA handler — no use_only_cookies check
-if (name_len == progress->sname_len && 
+if (name_len == progress->sname_len &&
     memcmp(data->name, PS(session_name), name_len) == 0) {
     zval_ptr_dtor(&progress->sid);
     ZVAL_STRINGL(&progress->sid, (*data->value), value_len);
@@ -80,52 +100,28 @@ if (name_len == progress->sname_len &&
 }
 ```
 
-Fix: [PR #22113](https://github.com/php/php-src/pull/22113) adds `!PS(use_only_cookies) &&` check.
+Fix: [PR #22113](https://github.com/php/php-src/pull/22113) adds a
+`!PS(use_only_cookies) &&` check.
 
 ### 3.2 Unvalidated Filename
 
 ```c
 // FILE_START handler stores raw filename
-add_assoc_string_ex(&progress->current_file, "name", 
+add_assoc_string_ex(&progress->current_file, "name",
                     sizeof("name") - 1, *data->filename);
 // ← No sanitization, no encoding, no length limit
 ```
 
-Filename can contain arbitrary bytes including PHP code and pipe `|` characters.
+The filename can contain arbitrary bytes, including PHP code. It never becomes
+a path: PHP writes the upload to its own `mkstemp()` file and only copies the
+name into the session array, which is why Chain A needs an LFI rather than a
+directory-traversal write.
 
-### 3.3 var_destroy Reentry UAF (ext/standard/var_unserializer.re)
-
-```c
-void var_destroy(php_unserialize_data_t *var_hashx) {
-    // Phase 1: FREE extension chunks
-    while (var_hash) {
-        efree_size(var_hash, sizeof(var_entries));  // ← line 245
-        var_hash = next;
-    }
-    // Phase 2: walk dtor chain
-    while (var_dtor_hash) {
-        // ...
-        i_zval_ptr_dtor(zv);  // ← line 310, NO serialize_lock!
-        // __destruct fires → inner unserialize() → R:N reads freed chunk
-    }
-}
-```
-
-### 3.4 Serializer Leak (ext/session/session.c)
-
-```c
-static void php_rshutdown_session_globals(void) {
-    // Resets: PS(id), PS(session_vars), PS(http_session_vars), PS(mod_data)
-    // Does NOT reset: PS(serializer) ← persists across FPM requests!
-}
-```
-
-### 3.5 `__destruct` on Decode Failure
+### 3.3 `__destruct` on Decode Failure
 
 ```c
 PS_SERIALIZER_DECODE_FUNC(php) {
     while (p < endptr) {
-        // ... find |, deserialize value ...
         if (php_var_unserialize(...)) {
             php_set_session_var(name, &rv, &var_hash);  // object stored
         } else {
@@ -138,7 +134,10 @@ break_outer_loop:
 }
 ```
 
-Even though the decoder returns FAILURE and `session_start()` calls `php_session_cancel_decode()` to destroy `$_SESSION`, the object's `__destruct` has ALREADY fired during `var_hash` cleanup.
+Even though the decoder returns FAILURE and `session_start()` calls
+`php_session_cancel_decode()` to destroy `$_SESSION`, the object's
+`__destruct()` has already fired during `var_hash` cleanup. This is the
+primitive behind both Chain C and Chain E.
 
 ## 4. Version Matrix
 
@@ -152,8 +151,6 @@ Even though the decoder returns FAILURE and `session_start()` calls `php_session
 | 8.3.x | Yes | Yes | → 8.3.36 |
 | 8.4.x | Yes | Yes | → 8.4.27 |
 | 8.5.x | Yes | Yes | → 8.5.12 |
-
-Vulnerable code identical across ALL versions from PHP 5.4.0 (2012) to present.
 
 ## 5. Detection
 
@@ -181,17 +178,18 @@ session.upload_progress.enabled = Off
 session.use_only_cookies = On
 session.use_strict_mode = On
 
-; Ensure consistent handler across directories
+; Ensure one handler across directories
 session.serialize_handler = php_serialize
 ```
 
-**Warning:** Disabling `upload_progress` does NOT fix the var_destroy UAF or the serializer leak. Apply the official PHP patch.
+**Warning:** Chain A and Chain C are request-level bugs. They do not depend on
+the memory-corruption fixes, so updating PHP alone does not remove them —
+disabling `upload_progress` and enforcing consistent session handling does.
 
 ## 7. References
 
 - [PHP Security Advisory](https://www.php.net/archive/2026.php) (pending)
 - [PR #22113 — Session fixation fix](https://github.com/php/php-src/pull/22113)
-- [Calif.IO — Serializable UAF](https://calif.io/research/php-uaf)
-- [dinosn — var_destroy UAF](https://github.com/dinosn/php-8.5.5-var_destroy-uaf)
+- [dinosn — var_destroy reentry](https://github.com/dinosn/php-8.5.5-var_destroy-uaf)
 - [PHP Bug #71101 — Handler mismatch](https://bugs.php.net/bug.php?id=71101)
 - [cnpanda — Handler mismatch exploitation](https://www.cnpanda.net/en/sec/580.html)
