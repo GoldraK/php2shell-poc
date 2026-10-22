@@ -217,7 +217,7 @@ EOF
 cat > docker-compose.yml << 'EOF'
 services:
   php:
-    image: php:8.2-fpm
+    image: php:${PHP_VERSION:-8.2.35-fpm}
     container_name: php2shell-lab
     ports: ["9000:9000"]
     volumes:
