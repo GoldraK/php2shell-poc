@@ -1,0 +1,31 @@
+{
+  "description": "PHP-FPM versions tested, ordered highest to lowest. Only versions verified to pull and run on modern Docker (containerd v2.1+).",
+  "verified": "2025-10-22",
+  "versions": [
+    "8.5.12-fpm",
+    "8.5.11-fpm",
+    "8.4.27-fpm",
+    "8.4.26-fpm",
+    "8.4.20-fpm",
+    "8.3.36-fpm",
+    "8.3.35-fpm",
+    "8.3.20-fpm",
+    "8.2.35-fpm",
+    "8.2.34-fpm",
+    "8.2.20-fpm",
+    "8.2.0-fpm",
+    "8.1.33-fpm",
+    "8.0.30-fpm",
+    "8.0.0-fpm",
+    "7.4.33-fpm",
+    "7.4.0-fpm",
+    "7.3.33-fpm",
+    "7.3.0-fpm",
+    "7.2.34-fpm",
+    "7.2.0-fpm",
+    "7.1.33-fpm",
+    "7.1.0-fpm",
+    "7.0.33-fpm",
+    "5.6-fpm"
+  ]
+}
